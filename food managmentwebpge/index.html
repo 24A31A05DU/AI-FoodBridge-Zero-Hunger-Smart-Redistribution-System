@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI FoodBridge – Zero Hunger Smart Redistribution System</title>
+    <style>
+        /* --- 1. CORE VARIABLES --- */
+        :root {
+            --bg-dark: #052b10;
+            --accent-primary: #a3e635; /* Neon Mint */
+            --accent-secondary: #2ecc71; /* Green */
+            --accent-alert: #ff6b6b;
+            --text-main: #ffffff;
+            --text-dim: #8ca68d;
+            
+            /* Glassmorphism */
+            --glass-surface: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-highlight: rgba(255, 255, 255, 0.15);
+            --blur-amount: 12px;
+
+            /* Effects */
+            --glow: 0 0 20px rgba(163, 230, 53, 0.3);
+            --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            
+            /* Spacing */
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+        }
+
+        /* --- 2. RESET & TYPOGRAPHY --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(46, 204, 113, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(163, 230, 53, 0.1) 0%, transparent 40%);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- 3. COMPONENTS & UTILITIES --- */
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .center { align-items: center; justify-content: center; }
+        .gap-1 { gap: 10px; } .gap-2 { gap: 20px; } .gap-3 { gap: 30px; }
+        
+        /* Buttons */
+        .btn {
+            padding: 10px 20px; border: none; border-radius: var(--radius-sm);
+            cursor: pointer; font-weight: 600; font-size: 0.9rem;
+            transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn:active { transform: scale(0.96); }
+        
+        .btn-primary { background: var(--accent-primary); color: var(--bg-dark); box-shadow: var(--glow); }
+        .btn-primary:hover { background: #bfff5a; box-shadow: 0 0 30px var(--accent-primary); }
+        
+        .btn-outline { background: transparent; border: 1px solid var(--glass-highlight); color: var(--text-main); }
+        .btn-outline:hover { border-color: var(--accent-primary); background: rgba(163, 230, 53, 0.1); }
+        
+        .btn-ghost { background: transparent; color: var(--text-dim); }
+        .btn-ghost:hover { color: var(--text-main); background: rgba(255,255,255,0.05); }
+
+        .btn-icon { padding: 8px; border-radius: 50%; aspect-ratio: 1; }
+
+        /* Glass Cards */
+        .glass-card {
+            background: var(--glass-surface);
+            backdrop-filter: blur(var(--blur-amount));
+            -webkit-backdrop-filter: blur(var(--blur-amount));
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .glass-card:hover { border-color: rgba(163, 230, 53, 0.3); transform: translateY(-2px); }
+        
+        /* Input Fields */
+        .input-group { margin-bottom: 15px; position: relative; }
+        .input-group label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 6px; }
+        .form-input {
+            width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border);
+            padding: 12px; color: white; border-radius: var(--radius-sm); outline: none;
+            transition: 0.3s;
+        }
+        .form-input:focus { border-color: var(--accent-primary); box-shadow: 0 0 10px rgba(163, 230, 53, 0.2); }
+
+        /* --- 4. LAYOUT STRUCTURE --- */
+        
+        /* Header */
+        header {
+            position: sticky; top: 0; z-index: 100;
+            padding: 0 30px; height: 70px;
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(5, 43, 16, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .brand { font-size: 1.4rem; font-weight: 800; color: var(--accent-primary); letter-spacing: 1px; }
+        .nav-links { display: flex; gap: 30px; }
+        .nav-item {
+            background: none; border: none; color: var(--text-dim); font-size: 0.95rem;
+            cursor: pointer; padding: 8px 0; position: relative; transition: 0.3s;
+        }
+        .nav-item:hover, .nav-item.active { color: var(--text-main); }
+        .nav-item.active::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
+            background: var(--accent-primary); box-shadow: 0 -5px 10px var(--accent-primary);
+        }
+
+        /* Main Container */
+        main { padding: 30px; max-width: 1400px; margin: 0 auto; padding-bottom: 100px; }
+        
+        /* Sections */
+        section { display: none; animation: fadeIn 0.4s ease-out; }
+        section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- 5. PAGE SPECIFIC STYLES --- */
+
+        /* Home */
+        .hero-container { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 40px; margin-top: 40px; }
+        .hero-badge {
+            display: inline-block; padding: 6px 12px; background: rgba(163, 230, 53, 0.1);
+            border: 1px solid var(--accent-primary); color: var(--accent-primary);
+            border-radius: 20px; font-size: 0.8rem; margin-bottom: 20px;
+        }
+        .ticker-wrap {
+            width: 100%; overflow: hidden; background: rgba(0,0,0,0.3); border-radius: var(--radius-sm);
+            padding: 10px 0; margin: 30px 0; display: flex; align-items: center;
+            border: 1px solid var(--glass-border);
+        }
+        .ticker-item { white-space: nowrap; padding: 0 20px; font-size: 0.85rem; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
+        .ticker-dot { width: 6px; height: 6px; background: var(--accent-primary); border-radius: 50%; box-shadow: 0 0 5px var(--accent-primary); }
+
+        /* Features Grid */
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 50px; }
+        .feature-card { padding: 20px; text-align: left; }
+        .feature-icon { 
+            width: 40px; height: 40px; background: rgba(255,255,255,0.05); 
+            border-radius: 10px; display: flex; align-items: center; justify-content: center; 
+            color: var(--accent-primary); margin-bottom: 15px;
+        }
+
+        /* Donate */
+        .donate-layout { display: grid; grid-template-columns: 1fr 350px; gap: 30px; }
+        .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .stat-pill { 
+            background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; 
+            text-align: center; border: 1px solid transparent; cursor: pointer; transition: 0.2s;
+        }
+        .stat-pill:hover { border-color: var(--accent-primary); background: rgba(163, 230, 53, 0.05); }
+        .stat-pill strong { display: block; font-size: 1.1rem; color: var(--accent-primary); }
+        .stat-pill span { font-size: 0.75rem; color: var(--text-dim); }
+
+        /* Analysis & Map */
+        .analysis-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 20px; }
+        
+        #map-container {
+            position: relative;
+            height: 400px; 
+            width: 100%;
+            background: rgba(0,0,0,0.4);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+        }
+        canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+        .map-overlay-ui {
+            position: absolute; top: 10px; left: 10px;
+            background: rgba(5, 43, 16, 0.9); padding: 5px 10px;
+            border-radius: 4px; border: 1px solid var(--glass-border);
+            pointer-events: none; font-size: 0.8rem; color: var(--accent-primary);
+        }
+
+        /* Tooltip & Details */
+        #map-tooltip {
+            position: absolute; background: rgba(0, 0, 0, 0.9);
+            border: 1px solid var(--accent-primary); padding: 10px;
+            border-radius: 6px; pointer-events: none; display: none;
+            z-index: 10; backdrop-filter: blur(5px);
+        }
+        #map-tooltip h5 { color: var(--accent-primary); margin-bottom: 4px; font-size: 0.9rem; }
+        #map-tooltip p { color: white; font-size: 0.8rem; margin: 2px 0; }
+
+        #location-detail-card {
+            position: absolute; right: 20px; top: 20px; width: 250px;
+            background: rgba(10, 30, 15, 0.95); border: 1px solid var(--accent-primary);
+            padding: 20px; border-radius: var(--radius-md);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px); display: none; z-index: 20;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        #close-detail { position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 1.2rem; }
+        #close-detail:hover { color: var(--accent-primary); }
+
+        /* Dashboard (Bento Grid) */
+        .bento-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: auto auto; gap: 20px; }
+        .bento-item { padding: 20px; }
+        .col-span-2 { grid-column: span 2; }
+        .row-span-2 { grid-row: span 2; }
+        
+        .chart-container { display: flex; align-items: flex-end; justify-content: space-around; height: 100%; padding-top: 20px; }
+        .bar-group { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 15%; }
+        .bar { width: 100%; background: var(--accent-secondary); border-radius: 4px 4px 0 0; transition: height 1s ease; position: relative; }
+        .bar:hover { background: var(--accent-primary); box-shadow: 0 0 10px var(--accent-primary); }
+        .bar-label { font-size: 0.7rem; color: var(--text-dim); }
+
+        /* Table */
+        .data-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
+        .data-table th { text-align: left; color: var(--text-dim); font-weight: normal; padding: 10px; border-bottom: 1px solid var(--glass-border); }
+        .data-table td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+
+        /* --- AUTH MODAL --- */
+        #auth-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+            z-index: 1000; display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: 0.3s;
+        }
+        #auth-modal.open { opacity: 1; pointer-events: auto; }
+        
+        .modal-content {
+            width: 100%; max-width: 420px;
+            background: #0f3e1e;
+            border: 1px solid var(--accent-primary);
+            box-shadow: 0 0 40px rgba(163, 230, 53, 0.15);
+            padding: 0; border-radius: var(--radius-md);
+            transform: scale(0.95); transition: 0.3s;
+            overflow: hidden;
+        }
+        #auth-modal.open .modal-content { transform: scale(1); }
+
+        .auth-header {
+            display: flex; background: rgba(0,0,0,0.2);
+        }
+        .auth-tab {
+            flex: 1; padding: 15px; border: none; background: none;
+            color: var(--text-dim); font-weight: 600; cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .auth-tab.active {
+            color: var(--accent-primary); border-bottom-color: var(--accent-primary);
+            background: rgba(163, 230, 53, 0.05);
+        }
+
+        .auth-body { padding: 30px; }
+        .modal-title { color: var(--accent-primary); margin-bottom: 20px; font-size: 1.5rem; text-align: center; }
+
+        /* --- DASHBOARD DETAIL MODALS (Generic) --- */
+        .detail-modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
+            width: 80%; max-width: 600px; max-height: 80vh;
+            background: #0a2611; border: 1px solid var(--accent-primary);
+            padding: 20px; border-radius: var(--radius-md);
+            z-index: 1100; box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            display: none; opacity: 0; transition: 0.3s;
+            overflow-y: auto;
+        }
+        .detail-modal.active { display: block; opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        .detail-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;}
+        .close-modal-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 4px solid rgba(163, 230, 53, 0.1);
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            border-left-color: var(--accent-primary);
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* --- 6. RESPONSIVE --- */
+        @media (max-width: 1024px) {
+            .hero-container, .donate-layout, .bento-grid { grid-template-columns: 1fr; }
+            .bento-item { grid-column: span 1 !important; grid-row: span 1 !important; }
+            .nav-links { display: none; }
+            .features-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="flex center gap-2">
+            <div style="width: 32px; height: 32px; background: var(--accent-primary); border-radius: 8px; display: grid; place-items: center; color: var(--bg-dark); font-weight: bold;">S</div>
+            <div class="brand">AI FoodBridge</div>
+        </div>
+
+        <nav class="nav-links">
+            <button class="nav-item active" onclick="router('home')" id="nav-home">Overview</button>
+            <button class="nav-item" onclick="router('donate')" id="nav-donate">Donate</button>
+            <button class="nav-item" onclick="router('analysis')" id="nav-analysis">AI Analysis</button>
+            <button class="nav-item" onclick="router('dashboard')" id="nav-dashboard">Dashboard</button>
+        </nav>
+
+        <div class="flex gap-1">
+            <button class="btn btn-ghost btn-icon" title="Notifications">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"></path></svg>
+            </button>
+            <!-- Login/Signup Button -->
+            <button id="auth-btn" class="btn btn-primary btn-sm" onclick="toggleAuthModal(true)">Partner Login</button>
+        </div>
+    </header>
+
+    <main>
+        
+        <!-- 1. HOME SECTION -->
+        <section id="home" class="active">
+            <div class="hero-container">
+                <div>
+                    <div class="hero-badge">System Operational v2.4</div>
+                    <h1 style="font-size: 3.5rem; line-height: 1.1; margin-bottom: 20px;">Zero Hunger.<br><span style="color: var(--accent-primary);">Zero Waste.</span></h1>
+                    <p style="color: var(--text-dim); font-size: 1.1rem; margin-bottom: 30px; max-width: 500px;">
+                        Our AI engine optimizes food redistribution in real-time, connecting surplus inventory with communities in need instantly.
+                    </p>
+                    
+                    <div class="flex gap-2">
+                        <button class="btn btn-primary" onclick="router('donate')">Start Donating</button>
+                        <button class="btn btn-outline" onclick="router('analysis')">View Live Map</button>
+                    </div>
+
+                    <div class="ticker-wrap">
+                        <div class="ticker-item"><div class="ticker-dot"></div> NGO Connected: 42 Active</div>
+                        <div class="ticker-item"><div class="ticker-dot"></div> Today's Saved Meals: 1,240</div>
+                        <div class="ticker-item"><div class="ticker-dot"></div> CO2 Offset: 450kg</div>
+                        <div class="ticker-item"><div class="ticker-dot"></div> AI Efficiency: 99.2%</div>
+                    </div>
+                </div>
+
+                <div class="glass-card flex center" style="height: 400px; position: relative; background: radial-gradient(circle at center, rgba(163,230,53,0.1) 0%, transparent 70%);">
+                    <div style="text-align: center;">
+                        <div style="font-size: 5rem; margin-bottom: 20px;">🌍</div>
+                        <h3 style="margin-bottom: 10px;">Global Impact Network</h3>
+                        <p style="color: var(--text-dim); font-size: 0.9rem;">Connected to 120+ cities</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="features-grid">
+                <div class="glass-card feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Real-Time Matching</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">AI algorithms match donors with recipients in under 3 seconds.</p>
+                </div>
+                <div class="glass-card feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Compliance & Safety</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Automated expiry tracking ensures all food is safe.</p>
+                </div>
+                <div class="glass-card feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Impact Analytics</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Detailed reports on carbon footprint reduction.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. DONATE SECTION -->
+        <section id="donate">
+            <div class="flex gap-2" style="margin-bottom: 20px;">
+                <button class="btn btn-primary">Manual Entry</button>
+                <button class="btn btn-outline" disabled>Bulk Upload (CSV)</button>
+            </div>
+
+            <div class="donate-layout">
+                <div class="glass-card">
+                    <h2 style="margin-bottom: 20px;">New Donation Entry</h2>
+                    <form id="donationForm" onsubmit="handleDonate(event)">
+                        <div class="flex gap-2">
+                            <div class="input-group" style="flex: 1;">
+                                <label>Food Category</label>
+                                <select id="foodType" class="form-input" required>
+                                    <option value="" disabled selected>Select...</option>
+                                    <option value="Produce">Fresh Produce</option>
+                                    <option value="Dairy">Dairy & Eggs</option>
+                                    <option value="Bakery">Bakery Items</option>
+                                    <option value="Canned">Canned Goods</option>
+                                    <option value="Prepared">Prepared Meals</option>
+                                </select>
+                            </div>
+                            <div class="input-group" style="flex: 1;">
+                                <label>Quantity (kg)</label>
+                                <input type="number" id="quantity" class="form-input" required min="1" placeholder="0">
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Pickup Location</label>
+                            <input type="text" id="location" class="form-input" required placeholder="e.g. 123 Market St, Downtown">
+                        </div>
+
+                        <div class="flex gap-2">
+                            <div class="input-group" style="flex: 1;">
+                                <label>Expiry Date</label>
+                                <input type="date" id="expiry" class="form-input" required>
+                            </div>
+                            <div class="input-group" style="flex: 1;">
+                                <label>Urgency Level</label>
+                                <select class="form-input">
+                                    <option>Standard (24h)</option>
+                                    <option>High (4h)</option>
+                                    <option>Critical (1h)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 20px; border-top: 1px solid var(--glass-border); padding-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+                            <button type="submit" class="btn btn-primary">Submit Donation</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <div class="glass-card">
+                        <h3 style="margin-bottom: 15px;">Quick Add</h3>
+                        <div class="quick-actions">
+                            <div class="stat-pill" onclick="quickDonate('Produce', 5)"><strong>+5kg</strong><span>Produce</span></div>
+                            <div class="stat-pill" onclick="quickDonate('Bakery', 10)"><strong>+10kg</strong><span>Bakery</span></div>
+                            <div class="stat-pill" onclick="quickDonate('Canned', 20)"><strong>+20kg</strong><span>Canned</span></div>
+                            <div class="stat-pill" onclick="quickDonate('Dairy', 5)"><strong>+5kg</strong><span>Dairy</span></div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card" style="flex-grow: 1;">
+                        <h3 style="margin-bottom: 10px;">Your Contribution</h3>
+                        <div style="font-size: 2rem; color: var(--accent-primary); font-weight: bold;" id="sidebar-total">0 kg</div>
+                        <p style="color: var(--text-dim); font-size: 0.8rem;">Lifetime Total</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. ANALYSIS SECTION -->
+        <section id="analysis">
+            <div class="flex gap-2" style="margin-bottom: 20px; justify-content: space-between;">
+                <div>
+                    <h2>AI Decision Engine</h2>
+                    <p style="color: var(--text-dim);">Real-time logistics optimization & visualization</p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn btn-outline" onclick="router('dashboard')">View Dashboard</button>
+                    <button class="btn btn-primary" id="sim-btn" onclick="runSimulation()">Run Optimization</button>
+                </div>
+            </div>
+
+            <div class="glass-card" style="margin-bottom: 30px;">
+                <div class="analysis-grid">
+                    <div class="bento-item" style="border-right: 1px solid var(--glass-border);">
+                        <h4 style="color: var(--text-dim);">Total Nodes</h4>
+                        <div style="font-size: 1.5rem; font-weight: bold;" id="node-count-display">0</div>
+                    </div>
+                    <div class="bento-item" style="border-right: 1px solid var(--glass-border);">
+                        <h4 style="color: var(--text-dim);">Active Routes</h4>
+                        <div style="font-size: 1.5rem; font-weight: bold;" id="route-count">0</div>
+                    </div>
+                    <div class="bento-item" style="border-right: 1px solid var(--glass-border);">
+                        <h4 style="color: var(--text-dim);">Efficiency</h4>
+                        <div style="font-size: 1.5rem; font-weight: bold; color: var(--accent-primary);">98.5%</div>
+                    </div>
+                    <div class="bento-item">
+                        <h4 style="color: var(--text-dim);">Status</h4>
+                        <div id="system-status" style="font-size: 1.5rem; font-weight: bold; color: #2ecc71;">Idle</div>
+                    </div>
+                </div>
+
+                <!-- MAP -->
+                <div id="map-container">
+                    <canvas id="mapCanvas"></canvas>
+                    <div class="map-overlay-ui">Live Map View • Click node for details</div>
+                    
+                    <div id="map-tooltip">
+                        <h5 id="tt-title">Location</h5>
+                        <p id="tt-type">Type: </p>
+                        <p id="tt-qty">Qty: </p>
+                    </div>
+
+                    <div id="location-detail-card">
+                        <button id="close-detail">&times;</button>
+                        <h3 style="color: var(--accent-primary); margin-bottom: 10px;" id="detail-title">Location Name</h3>
+                        <div style="font-size: 0.9rem; color: white; margin-bottom: 5px;">
+                            <span style="color: var(--text-dim);">ID:</span> <span id="detail-id">#000</span>
+                        </div>
+                        <div style="font-size: 0.9rem; color: white; margin-bottom: 5px;">
+                            <span style="color: var(--text-dim);">Type:</span> <span id="detail-type">Produce</span>
+                        </div>
+                        <div style="font-size: 0.9rem; color: white; margin-bottom: 15px;">
+                            <span style="color: var(--text-dim);">Qty:</span> <span id="detail-qty">0kg</span>
+                        </div>
+                        <!-- Actionable Button -->
+                        <button class="btn btn-primary" style="width: 100%; font-size: 0.8rem;" onclick="dispatchDriver()">Dispatch Driver</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sim-results" class="hidden analysis-grid">
+                <div class="glass-card bento-item">
+                    <h4>CO2 Saved</h4>
+                    <div style="font-size: 1.2rem; font-weight: bold; margin-top: 5px;">124kg</div>
+                </div>
+                <div class="glass-card bento-item">
+                    <h4>Matches Found</h4>
+                    <div style="font-size: 1.2rem; font-weight: bold; margin-top: 5px;" id="match-count">0</div>
+                </div>
+                <div class="glass-card bento-item col-span-2">
+                    <h4>Recommended Actions</h4>
+                    <div class="flex gap-2" style="margin-top: 10px;">
+                        <span class="status-badge">Dispatch Truck A</span>
+                        <span class="status-badge">Notify Center B</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. DASHBOARD SECTION -->
+        <section id="dashboard">
+            <div class="flex gap-2" style="margin-bottom: 20px; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2>Executive Dashboard</h2>
+                    <p style="color: var(--text-dim);">Overview of redistribution metrics</p>
+                </div>
+                <div class="flex gap-1">
+                    <!-- Actionable Button 1: Generate Report -->
+                    <button class="btn btn-primary" onclick="generateReport()">Generate Report</button>
+                </div>
+            </div>
+
+            <div class="bento-grid">
+                <div class="glass-card bento-item">
+                    <h4 style="color: var(--text-dim);">Total Donated</h4>
+                    <div style="font-size: 2rem; font-weight: bold; color: var(--text-main);" id="dash-total">0</div>
+                    <div style="font-size: 0.8rem; color: #2ecc71;">+12% vs last week</div>
+                </div>
+                
+                <div class="glass-card bento-item">
+                    <h4 style="color: var(--text-dim);">People Fed</h4>
+                    <div style="font-size: 2rem; font-weight: bold; color: var(--accent-primary);" id="dash-fed">0</div>
+                    <div style="font-size: 0.8rem; color: var(--text-dim);">Est. 1.5 meals/kg</div>
+                </div>
+
+                <div class="glass-card bento-item">
+                    <h4 style="color: var(--text-dim);">Waste Diverted</h4>
+                    <div style="font-size: 2rem; font-weight: bold;">0%</div>
+                    <div class="progress-container" style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); margin-top: 10px; border-radius: 3px;">
+                        <div style="width: 85%; height: 100%; background: var(--accent-secondary); border-radius: 3px;"></div>
+                    </div>
+                </div>
+
+                <div class="glass-card bento-item">
+                    <h4 style="color: var(--text-dim);">Active NGOs</h4>
+                    <div style="font-size: 2rem; font-weight: bold;">12</div>
+                    <!-- Actionable Button 2: View Partners -->
+                    <button class="btn btn-ghost" style="margin-top: 10px; font-size: 0.8rem;" onclick="showPartners()">View Partners</button>
+                </div>
+
+                <div class="glass-card bento-item col-span-2 row-span-2" style="min-height: 300px;">
+                    <div class="flex" style="justify-content: space-between; margin-bottom: 10px;">
+                        <h4>Category Breakdown</h4>
+                        <select style="background: transparent; border: 1px solid var(--glass-border); color: white; padding: 2px 8px; border-radius: 4px;">
+                            <option>This Week</option>
+                        </select>
+                    </div>
+                    <div class="chart-container" id="category-chart">
+                        <div class="bar-group"><div class="bar" style="height: 40%;"></div><div class="bar-label">Produce</div></div>
+                        <div class="bar-group"><div class="bar" style="height: 20%;"></div><div class="bar-label">Dairy</div></div>
+                        <div class="bar-group"><div class="bar" style="height: 60%;"></div><div class="bar-label">Bakery</div></div>
+                        <div class="bar-group"><div class="bar" style="height: 80%;"></div><div class="bar-label">Canned</div></div>
+                        <div class="bar-group"><div class="bar" style="height: 30%;"></div><div class="bar-label">Meals</div></div>
+                    </div>
+                </div>
+
+                <div class="glass-card bento-item col-span-2">
+                    <h4 style="margin-bottom: 15px;">Recent Transactions</h4>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Qty</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dash-table-body">
+                        </tbody>
+                    </table>
+                    <!-- Actionable Button 3: View Full History -->
+                    <button class="btn btn-ghost" style="width: 100%; margin-top: 15px; font-size: 0.9rem;" onclick="showHistory()">View Full History</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- AUTH MODAL (Login & Signup) -->
+    <div id="auth-modal">
+        <div class="modal-content">
+            <div class="auth-header">
+                <button class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
+                <button class="auth-tab" onclick="switchAuthTab('signup')">Sign Up</button>
+            </div>
+            <div class="auth-body">
+                
+                <!-- LOGIN FORM -->
+                <div id="login-form">
+                    <h3 class="modal-title">Partner Access</h3>
+                    <div class="input-group">
+                        <label>Email</label>
+                        <input type="email" id="login-email" class="form-input" placeholder="partner@foodbridge.ai">
+                    </div>
+                    <div class="input-group">
+                        <label>Password</label>
+                        <input type="password" id="login-pass" class="form-input" placeholder="••••••••">
+                    </div>
+                    <div class="flex gap-2" style="justify-content: center; margin-top: 20px;">
+                        <button class="btn btn-ghost" onclick="toggleAuthModal(false)">Cancel</button>
+                        <button class="btn btn-primary" onclick="handleLogin()">Login</button>
+                    </div>
+                    <p style="margin-top: 15px; font-size: 0.8rem; color: var(--text-dim);">Hint: partner@foodbridge.ai / demo</p>
+                </div>
+
+                <!-- SIGNUP FORM -->
+                <div id="signup-form" class="hidden">
+                    <h3 class="modal-title">Create Account</h3>
+                    <div class="input-group">
+                        <label>Organization Name</label>
+                        <input type="text" id="signup-org" class="form-input" placeholder="e.g. City Food Bank">
+                    </div>
+                    <div class="input-group">
+                        <label>Email</label>
+                        <input type="email" id="signup-email" class="form-input" placeholder="you@org.com">
+                    </div>
+                    <div class="input-group">
+                        <label>Password</label>
+                        <input type="password" id="signup-pass" class="form-input" placeholder="Create password">
+                    </div>
+                    <div class="flex gap-2" style="justify-content: center; margin-top: 20px;">
+                        <button class="btn btn-ghost" onclick="toggleAuthModal(false)">Cancel</button>
+                        <button class="btn btn-primary" onclick="handleSignup()">Sign Up</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- GENERIC DETAIL MODALS -->
+
+    <!-- Partners Modal -->
+    <div id="partners-modal" class="detail-modal">
+        <div class="detail-modal-header">
+            <h3>Active NGO Partners</h3>
+            <button class="close-modal-btn" onclick="closeModal('partners-modal')">&times;</button>
+        </div>
+        <div id="partners-list" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="history-modal" class="detail-modal">
+        <div class="detail-modal-header">
+            <h3>Full Donation History</h3>
+            <button class="close-modal-btn" onclick="closeModal('history-modal')">&times;</button>
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr><th>Date</th><th>Type</th><th>Qty</th><th>Location</th><th>Status</th></tr>
+            </thead>
+            <tbody id="history-table-body">
+                <!-- Populated by JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="report-modal" class="detail-modal" style="text-align: center;">
+        <div class="detail-modal-header">
+            <h3>Generating Report</h3>
+            <button class="close-modal-btn" onclick="closeModal('report-modal')">&times;</button>
+        </div>
+        <div id="report-loading" class="spinner"></div>
+        <div id="report-success" class="hidden">
+            <div style="font-size: 3rem; margin-bottom: 10px;">✅</div>
+            <h4 style="color: var(--accent-primary)">Report Ready</h4>
+            <p style="color: var(--text-dim)">Your impact summary PDF has been generated.</p>
+            <button class="btn btn-primary" style="margin-top: 20px;">Download PDF</button>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" style="position: fixed; bottom: 20px; right: 20px; background: var(--bg-dark); border: 1px solid var(--accent-primary); padding: 15px 25px; border-radius: 8px; color: var(--accent-primary); transform: translateY(100px); opacity: 0; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 2000;">
+        Success
+    </div>
+
+    <script>
+        // --- STATE MANAGEMENT ---
+        let donations = JSON.parse(localStorage.getItem('foodDonations')) || [];
+        let mapNodes = []; 
+        let isSimulationRunning = false;
+        let selectedNode = null; 
+        let isLoggedIn = false;
+
+        // --- ROUTING ---
+        function router(pageId) {
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+            const activeBtn = document.getElementById('nav-' + pageId);
+            if(activeBtn) activeBtn.classList.add('active');
+
+            document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+
+            if(pageId === 'dashboard') updateDashboard();
+            else if(pageId === 'donate') updateSidebar();
+            else if(pageId === 'analysis') {
+                updateAnalysisReadiness();
+                setTimeout(() => { initMap(); }, 50); 
+            }
+        }
+
+        // --- AUTH SYSTEM ---
+        const authModal = document.getElementById('auth-modal');
+        const authBtn = document.getElementById('auth-btn');
+
+        function toggleAuthModal(show) {
+            if(show) {
+                if(isLoggedIn) {
+                    // If already logged in, maybe show profile? For now, just ignore
+                    return; 
+                }
+                authModal.classList.add('open');
+            } else {
+                authModal.classList.remove('open');
+            }
+        }
+
+        authBtn.addEventListener('click', () => toggleAuthModal(true));
+
+        function switchAuthTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(b => b.classList.remove('active'));
+            if(tab === 'login') {
+                document.querySelectorAll('.auth-tab')[0].classList.add('active');
+                document.getElementById('login-form').classList.remove('hidden');
+                document.getElementById('signup-form').classList.add('hidden');
+            } else {
+                document.querySelectorAll('.auth-tab')[1].classList.add('active');
+                document.getElementById('login-form').classList.add('hidden');
+                document.getElementById('signup-form').classList.remove('hidden');
+            }
+        }
+
+        function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+
+            if(email === 'partner@foodbridge.ai' && pass === 'demo') {
+                loginSuccess("Partner");
+            } else {
+                showToast("Invalid credentials");
+            }
+        }
+
+        function handleSignup() {
+            const org = document.getElementById('signup-org').value;
+            if(!org) { showToast("Please enter organization name"); return; }
+            
+            // Simulate signup delay
+            showToast("Creating Account...");
+            setTimeout(() => {
+                loginSuccess(org);
+            }, 1000);
+        }
+
+        function loginSuccess(name) {
+            isLoggedIn = true;
+            toggleAuthModal(false);
+            authBtn.innerText = `${name} (Online)`;
+            authBtn.style.backgroundColor = "#2ecc71";
+            authBtn.style.boxShadow = "none";
+            showToast(`Welcome back, ${name}`);
+            document.getElementById('sim-btn').disabled = false;
+        }
+
+        // --- DASHBOARD BUTTON ACTIONS ---
+        
+        function generateReport() {
+            const modal = document.getElementById('report-modal');
+            const loading = document.getElementById('report-loading');
+            const success = document.getElementById('report-success');
+            
+            modal.classList.add('active');
+            loading.classList.remove('hidden');
+            success.classList.add('hidden');
+
+            // Simulate generation time
+            setTimeout(() => {
+                loading.classList.add('hidden');
+                success.classList.remove('hidden');
+            }, 1500);
+        }
+
+        function showPartners() {
+            const list = document.getElementById('partners-list');
+            // Dummy Data
+            const partners = [
+                { name: "City Food Bank", type: "Distribution Hub", status: "Active" },
+                { name: "Green Earth Shelter", type: "Direct Aid", status: "Active" },
+                { name: "Community Kitchen", type: "Meal Prep", status: "Restocking" },
+                { name: "Hope Center", type: "Distribution Hub", status: "Active" }
+            ];
+
+            list.innerHTML = partners.map(p => `
+                <div class="glass-card" style="padding: 15px; display: flex; justify-content: space-between; align-items: center; margin:0;">
+                    <div>
+                        <div style="color: white; font-weight: bold;">${p.name}</div>
+                        <div style="color: var(--text-dim); font-size: 0.8rem;">${p.type}</div>
+                    </div>
+                    <span class="status-badge">${p.status}</span>
+                </div>
+            `).join('');
+            
+            document.getElementById('partners-modal').classList.add('active');
+        }
+
+        function showHistory() {
+            const tbody = document.getElementById('history-table-body');
+            tbody.innerHTML = '';
+            
+            [...donations].reverse().forEach(d => {
+                const row = `<tr>
+                    <td>${d.date}</td>
+                    <td>${d.type}</td>
+                    <td>${d.qty}kg</td>
+                    <td>${d.location}</td>
+                    <td><span class="status-badge">${d.status}</span></td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+
+            if(donations.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No history found</td></tr>';
+            }
+
+            document.getElementById('history-modal').classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        // --- MAP ACTIONS ---
+        function dispatchDriver() {
+            const btn = document.querySelector('#location-detail-card .btn-primary');
+            const originalText = btn.innerText;
+            btn.innerText = "Dispatching...";
+            btn.style.backgroundColor = "#ff6b6b"; // Alert color
+            
+            setTimeout(() => {
+                btn.innerText = "Dispatched";
+                showToast("Driver dispatched successfully!");
+                document.getElementById('location-detail-card').style.display = 'none';
+                selectedNode = null;
+                // Reset button style after close (handled by DOM replacement usually, but here we reset)
+                setTimeout(() => { btn.innerText = originalText; btn.style.backgroundColor = ""; }, 500);
+            }, 1500);
+        }
+
+        // --- DONATION LOGIC ---
+        function handleDonate(e) {
+            e.preventDefault();
+            const donation = {
+                id: Date.now(),
+                type: document.getElementById('foodType').value,
+                qty: parseFloat(document.getElementById('quantity').value),
+                location: document.getElementById('location').value,
+                date: new Date().toLocaleDateString(),
+                status: 'Pending'
+            };
+            saveDonation(donation);
+            e.target.reset();
+            showToast("Donation Submitted");
+        }
+
+        function quickDonate(type, qty) {
+            const donation = {
+                id: Date.now(),
+                type: type,
+                qty: qty,
+                location: "Auto-Detected Hub",
+                date: new Date().toLocaleDateString(),
+                status: 'Processing'
+            };
+            saveDonation(donation);
+            showToast(`Added: ${qty}kg ${type}`);
+        }
+
+        function saveDonation(item) {
+            donations.push(item);
+            localStorage.setItem('foodDonations', JSON.stringify(donations));
+            generateMapNodes();
+            updateSidebar();
+            updateAnalysisReadiness();
+        }
+
+        // --- MAP LOGIC (Same as before) ---
+        function generateMapNodes() {
+            mapNodes = donations.map(d => {
+                const seed = d.id;
+                const x = (seed % 700) + 50; 
+                const y = ((seed * 13) % 250) + 50; 
+                return { x, y, data: d };
+            });
+            document.getElementById('node-count-display').innerText = mapNodes.length;
+        }
+
+        function initMap() {
+            const canvas = document.getElementById('mapCanvas');
+            const container = document.getElementById('map-container');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = container.offsetWidth;
+            canvas.height = container.offsetHeight;
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Grid
+                ctx.strokeStyle = 'rgba(163, 230, 53, 0.05)';
+                ctx.lineWidth = 1;
+                const gridSize = 40;
+                for(let x=0; x<canvas.width; x+=gridSize) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+                for(let y=0; y<canvas.height; y+=gridSize) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                
+                // Hub
+                ctx.beginPath(); ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
+                ctx.fillStyle = '#fff'; ctx.fill(); ctx.shadowBlur = 15; ctx.shadowColor = '#fff'; ctx.stroke(); ctx.shadowBlur = 0;
+
+                // Routes
+                if(isSimulationRunning) {
+                    ctx.strokeStyle = 'rgba(46, 204, 113, 0.5)';
+                    ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+                    mapNodes.forEach(node => { ctx.beginPath(); ctx.moveTo(centerX, centerY); ctx.lineTo(node.x, node.y); ctx.stroke(); });
+                    ctx.setLineDash([]);
+                }
+
+                // Nodes
+                mapNodes.forEach(node => {
+                    ctx.beginPath(); ctx.arc(node.x, node.y, 6, 0, Math.PI * 2);
+                    if(selectedNode && selectedNode.data.id === node.data.id) {
+                        ctx.fillStyle = '#ff6b6b'; ctx.shadowBlur = 20; ctx.shadowColor = '#ff6b6b';
+                        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+                    } else if(isSimulationRunning) {
+                        ctx.fillStyle = '#a3e635'; ctx.shadowBlur = 10; ctx.shadowColor = '#a3e635';
+                    } else { ctx.fillStyle = '#8ca68d'; ctx.shadowBlur = 0; }
+                    ctx.fill(); ctx.shadowBlur = 0;
+                });
+                requestAnimationFrame(draw);
+            }
+            draw();
+        }
+
+        const canvas = document.getElementById('mapCanvas');
+        const detailCard = document.getElementById('location-detail-card');
+        const tooltip = document.getElementById('map-tooltip');
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left; const mouseY = e.clientY - rect.top;
+            let clicked = false;
+            mapNodes.forEach(node => {
+                const dist = Math.sqrt((mouseX - node.x)**2 + (mouseY - node.y)**2);
+                if(dist < 15) { clicked = true; selectedNode = node; showLocationDetail(node.data); }
+            });
+            if(!clicked) { selectedNode = null; detailCard.style.display = 'none'; }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left; const mouseY = e.clientY - rect.top;
+            let hit = false;
+            mapNodes.forEach(node => {
+                const dist = Math.sqrt((mouseX - node.x)**2 + (mouseY - node.y)**2);
+                if(dist < 10) {
+                    hit = true; tooltip.style.display = 'block'; tooltip.style.left = (e.clientX + 15) + 'px'; tooltip.style.top = (e.clientY + 15) + 'px';
+                    document.getElementById('tt-title').innerText = node.data.location; document.getElementById('tt-type').innerText = `Type: ${node.data.type}`; document.getElementById('tt-qty').innerText = `Qty: ${node.data.qty}kg`;
+                    canvas.style.cursor = 'pointer';
+                }
+            });
+            if(!hit) { tooltip.style.display = 'none'; canvas.style.cursor = 'crosshair'; }
+        });
+
+        document.getElementById('close-detail').addEventListener('click', () => { detailCard.style.display = 'none'; selectedNode = null; });
+
+        function showLocationDetail(data) {
+            detailCard.style.display = 'block';
+            document.getElementById('detail-title').innerText = data.location;
+            document.getElementById('detail-id').innerText = '#' + data.id.toString().slice(-4);
+            document.getElementById('detail-type').innerText = data.type;
+            document.getElementById('detail-qty').innerText = data.qty + ' kg';
+            document.getElementById('detail-status').innerText = data.status;
+        }
+
+        // --- ANALYSIS LOGIC ---
+        function updateAnalysisReadiness() {
+            if(donations.length > 0) {
+                document.getElementById('sim-btn').disabled = false;
+                document.getElementById('system-status').innerText = "Ready"; document.getElementById('system-status').style.color = "#a3e635";
+                generateMapNodes();
+            } else {
+                document.getElementById('system-status').innerText = "No Data"; document.getElementById('system-status').style.color = "#ff6b6b";
+            }
+        }
+
+        function runSimulation() {
+            if(isSimulationRunning) return; if(donations.length === 0) { showToast("No donations to analyze!"); return; }
+            const btn = document.getElementById('sim-btn'); const status = document.getElementById('system-status'); const results = document.getElementById('sim-results');
+            btn.disabled = true; isSimulationRunning = true; status.innerText = "Optimizing..."; status.style.color = "#ffcc00";
+            setTimeout(() => {
+                status.innerText = "Active"; status.style.color = "#2ecc71"; results.classList.remove('hidden');
+                document.getElementById('route-count').innerText = mapNodes.length; document.getElementById('match-count').innerText = donations.length;
+                btn.disabled = false; btn.innerText = "Re-Run Optimization"; showToast("Routes Calculated Successfully");
+            }, 1500);
+        }
+
+        // --- DASHBOARD LOGIC ---
+        function updateDashboard() {
+            const total = donations.reduce((sum, d) => sum + d.qty, 0);
+            const fed = Math.floor(total * 1.5);
+            animateValue("dash-total", parseInt(document.getElementById("dash-total").innerText), total, 1000);
+            animateValue("dash-fed", parseInt(document.getElementById("dash-fed").innerText), fed, 1000);
+            const tbody = document.getElementById('dash-table-body'); tbody.innerHTML = '';
+            [...donations].reverse().slice(0, 5).forEach(d => {
+                tbody.innerHTML += `<tr><td>${d.type}</td><td>${d.qty}kg</td><td>${d.location}</td><td><span class="status-badge">${d.status}</span></td></tr>`;
+            });
+            if(donations.length === 0) tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color: var(--text-dim);">No recent data</td></tr>';
+        }
+
+        function updateSidebar() {
+            const total = donations.reduce((sum, d) => sum + d.qty, 0);
+            document.getElementById('sidebar-total').innerText = total + " kg";
+        }
+
+        // --- UTILS ---
+        function animateValue(id, start, end, duration) {
+            if (start === end) return;
+            const obj = document.getElementById(id); const range = end - start; let current = start; const increment = end > start ? 1 : -1;
+            const stepTime = Math.abs(Math.floor(duration / range));
+            const timer = setInterval(function() { current += increment; obj.innerHTML = current; if (current == end) clearInterval(timer); }, Math.max(stepTime, 10));
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast'); t.innerText = msg; t.style.transform = "translateY(0)"; t.style.opacity = "1";
+            setTimeout(() => { t.style.transform = "translateY(100px)"; t.style.opacity = "0"; }, 3000);
+        }
+
+        window.onload = function() { updateSidebar(); updateAnalysisReadiness(); generateMapNodes(); initMap(); }
+        window.onresize = function() { if(document.getElementById('analysis').classList.contains('active')) initMap(); }
+    </script>
+</body>
+</html>
